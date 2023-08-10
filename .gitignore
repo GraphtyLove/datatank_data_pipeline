@@ -1,0 +1,8 @@
+.DS_Store
+logs/*
+.vscode
+.idea
+*__pycache__*
+*.env
+logs/*
+plusgins/*

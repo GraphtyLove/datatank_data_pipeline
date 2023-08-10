@@ -21,9 +21,19 @@ The data is then stored in a MongoDB database.
 # You need to modify the build_push_images.sh file to include your Docker Hub username
 bash build_push_images.sh
 ```
+2. Initialise the airflow database
+```bash
+# Do this to ensure those folders are gonna have the right permissions
+mkdir -p ./dags ./logs ./plugins ./config
+# Add your users UID to the .env file
+echo -e "AIRFLOW_UID=$(id -u)" > .env
+echo -e "AIRFLOW_GID=0" >> .env
+# Run the airflow init command
+docker-compose up -d airflow-init
+```
 2. Run airflow
 ```bash
-docker-compose up
+docker-compose up -d
 ```
 3. Set the MONGO_URI environment variable in the airflow UI's variables tab
 ```

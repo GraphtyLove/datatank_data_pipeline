@@ -44,3 +44,17 @@ The Airflow's variable should be nammed: mongodb_uri
 ```
 4. Connect to the airflow UI: [http://localhost:8080](http://localhost:8080) The default username and password are both `airflow`.
 5. Trigger the `news_papers_data_pipeline` DAG 
+
+## How to add a new scraper
+1. Create a new scraper in the `scrapers` folder with:
+- A `main.py` file that contains the scraper's logic
+- A `requirements.txt` file that contains the scraper's dependencies
+
+2. Add the scraper to the `scraper_names` list in the `dags/scraping_pipeline.py` file
+
+3. Run the docker images building & push script
+```bash
+bash build_push_images.sh
+```
+
+4. Run the pipeline on Airflow

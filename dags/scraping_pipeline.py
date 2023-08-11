@@ -42,7 +42,6 @@ scraper_names = [
 ]
 
 scraper_tasks = []
-
 # Create a DockerOperator task for each scraper image
 for scraper_name in scraper_names:
     image_name = f"graphtylove/datatank_scraper_{scraper_name}"
@@ -81,8 +80,8 @@ preprocessing_task = DockerOperator(
     }
 )
 
-# Setting up the pipeline run order
-for scraper_task in scraper_tasks:
-    scraper_task >> sync_task
+# # Setting up the pipeline run order
+# for scraper_task in scraper_tasks:
+#     scraper_task >> sync_task
 
-sync_task >> preprocessing_task
+# sync_task >> preprocessing_task

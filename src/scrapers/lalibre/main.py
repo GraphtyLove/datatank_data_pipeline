@@ -38,7 +38,7 @@ def main():
                 article = {
                     "url": row["url"],
                     "title": row["title"],
-                    "article": row["article"],
+                    "text": row["article"],
                     "date": row["date"]
                 }
                 collection.insert_one(article)

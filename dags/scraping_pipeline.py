@@ -15,12 +15,6 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
-dag = DAG(
-    'scraping_pipeline',
-    default_args=default_args,
-    schedule_interval='@daily',  # Run every day at midnight
-    start_date=days_ago(1),
-)
 
 # List of scrapers that have been converted into Docker images
 scraper_names = [
@@ -41,47 +35,48 @@ scraper_names = [
     "vrt",
 ]
 
-scraper_tasks = []
-# Create a DockerOperator task for each scraper image
-for scraper_name in scraper_names:
-    image_name = f"graphtylove/datatank_scraper_{scraper_name}"
-    
-    task = DockerOperator(
+with DAG('scraping_pipeline',
+    default_args=default_args,
+    schedule_interval='@hourly',  # Run every day at midnight
+    start_date=days_ago(1),
+) as dag:
+
+    scraper_tasks = []
+    # Create a DockerOperator task for each scraper image
+    for scraper_name in scraper_names:
+        image_name = f"graphtylove/datatank_scraper_{scraper_name}"
+        
+        task = DockerOperator(
+            docker_url='tcp://docker-proxy:2375',
+            image=image_name,
+            network_mode='bridge',
+            task_id=f"task___scraper_{scraper_name}",
+            force_pull=True,
+            auto_remove=True,
+            environment={
+                "MONGODB_URI": "{{ var.value.mongodb_uri }}",
+            }
+        )
+        scraper_tasks.append(task)
+
+    # Dummy task as a synchronization point
+    sync_task = DummyOperator(task_id='task___sync_task')
+
+    # Task for the preprocessing step
+    preprocessing_task = DockerOperator(
         docker_url='tcp://docker-proxy:2375',
-        image=image_name,
+        image='graphtylove/datatank_data_preprocessing',
         network_mode='bridge',
-        task_id=f"task___scraper_{scraper_name}",
+        task_id='task___preprocessing',
         force_pull=True,
         auto_remove=True,
-        dag=dag,
- 		environment={
-			"MONGODB_URI": "{{ var.value.mongodb_uri }}",
-		}
+        environment={
+            "MONGODB_URI": "{{ var.value.mongodb_uri }}",
+        }
     )
-    scraper_tasks.append(task)
 
-# Dummy task as a synchronization point
-sync_task = DummyOperator(
-    task_id='task___sync_task',
-    dag=dag
-)
+    # Setting up the pipeline run order
+    for scraper_task in scraper_tasks:
+       scraper_task >> sync_task
 
-# Task for the preprocessing step
-preprocessing_task = DockerOperator(
-    docker_url='tcp://docker-proxy:2375',
-    image='graphtylove/datatank_data_preprocessing',
-    network_mode='bridge',
-    task_id='task___preprocessing',
-    force_pull=True,
-    auto_remove=True,
-    dag=dag,
-    environment={
-        "MONGODB_URI": "{{ var.value.mongodb_uri }}",
-    }
-)
-
-# # Setting up the pipeline run order
-# for scraper_task in scraper_tasks:
-#     scraper_task >> sync_task
-
-# sync_task >> preprocessing_task
+    sync_task >> preprocessing_task
